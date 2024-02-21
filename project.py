@@ -4,10 +4,11 @@ import datetime
 
 
 class Employee:
-    def __init__(self, name, hours_worked, rate):
+    def __init__(self, name, hours_worked, rate, shift):
         self.name = name
         self.hours_worked = hours_worked
         self.rate = rate
+        self.shift = shift
 
 
 class Payroll:
@@ -39,6 +40,7 @@ class Check:
         taxes = total_pay * self.tax_rate
         net_pay = total_pay - taxes
 
+        print(f"Employee Shift: {self.payroll.employee.shift}")
         print(f"Employee Name: {self.payroll.employee.name}")
         print(f"Hours Worked: {self.payroll.employee.hours_worked}")
         print(f"Hourly Rate: ${self.payroll.employee.rate}")
@@ -53,13 +55,23 @@ class Check:
 # Example usage
 
 
+def get_shift(number):
+    if number == 1:
+        return 'Day Shift'
+    elif number == 2:
+        return 'Night Sshift'
+    else:
+        return f"There is not {number} Shift in this company"
+
+
 def main():
     name = input("Enter Employee Name: ")
-    hours_work = int(input("Enter hours work: "))
+    hours_work = int(input("Enter Hours Work: "))
     hourly_rate = int(input("Enter Employee Rate: "))
     tax_rate = 0.2
+    number = int(input("Enter Employee Shift (1 or 2): "))
 
-    employee = Employee(name, hours_work, hourly_rate)
+    employee = Employee(name, hours_work, hourly_rate, get_shift(number))
     payroll = Payroll(employee)
     check = Check(payroll, tax_rate)
     check.print_check()
