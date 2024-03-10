@@ -1,6 +1,26 @@
 from customtkinter import *
 import customtkinter
 import datetime
+import tkinter as tk
+from tkinter import END
+# get PDF file libraries
+from reportlab.pdfgen import canvas
+from reportlab.lib.styles import ParagraphStyle
+from reportlab.platypus import Paragraph
+from reportlab.lib.pagesizes import A4
+import pathlib
+
+# add Paragraph style ##
+my_Style = ParagraphStyle('My Para style',
+                          fontName="Times-Roman",
+                          fontSize=16,
+                          alignment=0,
+                          borderWidth=2,
+                          borderColor='#FFFF00',
+                          backColor='#F1F1F1',
+                          borderPadding=(20, 20, 20),
+                          leading=20
+                          )
 
 
 class Employee:
@@ -34,11 +54,12 @@ class Check:
     def __init__(self, payroll, tax_rate):
         self.payroll = payroll
         self.tax_rate = tax_rate
-
-    def print_check(self):
-        total_pay, overtime_pay, overtime_hours, regular_hours = self.payroll.calculate_pay()
-        taxes = total_pay * self.tax_rate
-        net_pay = total_pay - taxes
+        self.total_pay, overtime_pay, overtime_hours, regular_hours = self.payroll.calculate_pay()
+        self.taxes = self.total_pay * self.tax_rate
+        self.net_pay = self.total_pay - self.taxes
+        self.overtime = overtime_pay
+        self.overtime_hours = overtime_hours
+        self.regulars_hours = regular_hours
 
         print(f"Employee Shift: {self.payroll.employee.shift}")
         print(f"Employee Name: {self.payroll.employee.name}")
@@ -48,9 +69,9 @@ class Check:
         print(f"Overtime hours: {overtime_hours} hours")
         print(f"Overtime Pay: ${overtime_pay}")
         print(f"Date: {datetime.date.today()}")
-        print(f"Gross Pay: ${total_pay}")
-        print(f"Taxes: ${taxes}")
-        print(f"Net Pay: ${net_pay}")
+        print(f"Gross Pay: ${self.total_pay}")
+        print(f"Taxes: ${self.taxes}")
+        print(f"Net Pay: ${self.net_pay}")
 
 # Example usage
 
@@ -59,7 +80,7 @@ def get_shift(number):
     if number == 1:
         return 'Day Shift'
     elif number == 2:
-        return 'Night Sshift'
+        return 'Night Shift'
     else:
         return f"There is not {number} Shift in this company"
 
@@ -73,7 +94,7 @@ class App(customtkinter.CTk):
         customtkinter.set_default_color_theme("green")
         # set the appearance mode
         customtkinter.set_appearance_mode("system")  # default
-        self.geometry("800x400")
+        self.geometry("800x500")
         # config grid layout on the window
         self.grid_columnconfigure((0, 1), weight=1)
         self.grid_rowconfigure(0, weight=1)
@@ -83,7 +104,7 @@ class App(customtkinter.CTk):
         self.frame_one.grid_columnconfigure(0, weight=1)
         self.frame_one.grid(row=0, column=0, sticky=(NSEW), padx=10, pady=10)
 
-        CTkLabel(self.frame_one, text="Employee Pay Stub", font=('Courier', 18, 'bold'), justify=CENTER).grid(row=0, column=0, sticky=(EW), columnspan=2, pady=15)
+        CTkLabel(self.frame_one, text="Employee Pay Stub", font=('Courier', 18, 'bold'), justify=CENTER).grid(row=0, column=0, sticky=(EW), columnspan=2, pady=(40,30))
 
 
         CTkLabel(self.frame_one, text="Employee Name", font=('Courier', 18, 'bold'),
@@ -95,9 +116,9 @@ class App(customtkinter.CTk):
 
         CTkLabel(self.frame_one, text="Hours Work", font=('Courier', 18, 'bold'),
                  justify=CENTER).grid(row=2, column=0, sticky=("W"), padx=10)
-        self. hours_work = CTkEntry(
+        self.hours_work = CTkEntry(
             self.frame_one, width=200, height=30, placeholder_text="Enter Hours Work")
-        self. hours_work.grid(row=2, column=1, sticky="W", padx=10, pady=10)
+        self.hours_work.grid(row=2, column=1, sticky="W", padx=10, pady=10)
 
 
         CTkLabel(self.frame_one, text="Employee Rate", font=('Courier', 18, 'bold'),
@@ -113,8 +134,8 @@ class App(customtkinter.CTk):
                                placeholder_text="Enter Employee Shift (1 or 2)")
         self.number.grid(row=4, column=1, sticky="WE", padx=10, pady=10)
 
-        CTkButton(self.frame_one, text="Submit",command=self.main ).grid(row=8, column=0, sticky=SW, padx=10,pady=(60, 10))  
-        CTkButton(self.frame_one, text="Quit", command= self.destroy, fg_color="red",font=("Arial", 14, 'bold')).grid(row=8, column=1, sticky=SE, padx=10,pady=(60,10))  
+        CTkButton(self.frame_one, text="Submit",command=self.main ).grid(row=8, column=0, sticky=SW, padx=10,pady=(100, 5))  
+        CTkButton(self.frame_one, text="Quit", command= self.destroy, fg_color="red",font=("Arial", 14, 'bold')).grid(row=8, column=1, sticky=SE, padx=10,pady=(100,5))  
 
 
         
@@ -123,19 +144,96 @@ class App(customtkinter.CTk):
         self.frame_two = CTkFrame(self, width=150)
         self.frame_two.grid_columnconfigure(0, weight=1)
         self.frame_two.grid(row=0, column=1, sticky=(NSEW), pady=10, padx=(0,10))
+        CTkLabel(self.frame_two, text="Tyson Foods", font=('Courier', 20, 'bold'), justify=CENTER).grid(row=0, column=0, sticky=(EW), columnspan=2, pady=15)
 
-        def main(self):
-            self.name = input("Enter Employee Name: ")
-            hours_work = int(input("Enter Hours Work: "))
-            hourly_rate = int(input("Enter Employee Rate: "))
-            tax_rate = 0.2
-            number = int(input("Enter Employee Shift (1 or 2): "))
+    def main(self):
+        name = self.name.get()
+        hours_work = int(self.hours_work.get())
+        hourly_rate = int(self.hourly_rate.get())
+        tax_rate = 0.2
+        number = int(self.number.get())
 
-            employee = Employee(name, hours_work, hourly_rate, get_shift(number))
-            payroll = Payroll(employee)
-            check = Check(payroll, tax_rate)
-            check.print_check()
+        employee = Employee(name, hours_work, hourly_rate, get_shift(number))
 
+        payroll = Payroll(employee)
+        check = Check(payroll, tax_rate)
+        
+
+       
+
+        CTkLabel(self.frame_two, text="Date", font=('Courier', 18, 'bold'), justify=CENTER).grid(row=1, column=0, sticky=("w"), padx=10)
+
+        CTkLabel(self.frame_two, text=datetime.date.today(), font=(
+            'Courier', 18, 'bold'), justify=CENTER).grid(row=1, column=1, sticky=("w"), padx=10)
+
+        CTkLabel(self.frame_two, text="Employee Shift", font=('Courier', 18, 'bold'),justify=CENTER).grid(row=2, column=0, sticky=("w"), padx=10)
+        CTkLabel(self.frame_two, text=payroll.employee.shift, font=('Courier', 18, 'bold'),
+                 justify=CENTER).grid(row=2, column=1, sticky=("w"), padx=10)
+        
+        CTkLabel(self.frame_two, text="Employee Name", font=('Courier', 18, 'bold'),justify=CENTER).grid(row=3, column=0, sticky=("W"), padx=10, pady=10)
+        CTkLabel(self.frame_two, text=name, font=('Courier', 18, 'bold'),
+                 justify=CENTER).grid(row=3, column=1, sticky=("w"), padx=10)
+        
+        CTkLabel(self.frame_two, text="Hours Work", font=('Courier', 18, 'bold'),justify=CENTER).grid(row=4, column=0, sticky=("W"), padx=10)
+        CTkLabel(self.frame_two, text=hours_work, font=('Courier', 18, 'bold'),
+                 justify=CENTER).grid(row=4, column=1, sticky=("w"), padx=10)
+        
+        CTkLabel(self.frame_two, text="Rate", font=('Courier', 18, 'bold'),justify=CENTER).grid(row=5, column=0, sticky=("w"), padx=10)
+        CTkLabel(self.frame_two, text=hourly_rate, font=('Courier', 18, 'bold'),
+                 justify=CENTER).grid(row=5, column=1, sticky=("w"), padx=10)
+        
+        CTkLabel(self.frame_two, text="Regular Hours", font=('Courier', 18, 'bold'), justify=CENTER).grid(row=6, column=0, sticky=("w"), padx=10)
+        CTkLabel(self.frame_two, text=check.regulars_hours, font=('Courier', 18, 'bold'),
+                 justify=CENTER).grid(row=6, column=1, sticky=("w"), padx=10)
+        
+        CTkLabel(self.frame_two, text="Overtimes Hours", font=('Courier', 18, 'bold'), justify=CENTER).grid(row=7, column=0, sticky=("w"), padx=10)
+        CTkLabel(self.frame_two, text=check.overtime_hours, font=('Courier', 18, 'bold'),
+                 justify=CENTER).grid(row=7, column=1, sticky=("w"), padx=10)
+        
+        CTkLabel(self.frame_two, text="Overtime Pay", font=('Courier', 18, 'bold'), justify=CENTER).grid(row=8, column=0, sticky=("w"), padx=10)
+        CTkLabel(self.frame_two, text=f"${check.overtime}", font=('Courier', 18, 'bold'),
+                 justify=CENTER).grid(row=8, column=1, sticky=("w"), padx=10)
+        
+        CTkLabel(self.frame_two, text="Gross Amount", font=('Courier', 18, 'bold'), justify=CENTER).grid(row=9, column=0, sticky=("w"), padx=10)
+        CTkLabel(self.frame_two, text=f"${check.total_pay}", font=('Courier', 18, 'bold'),
+                 justify=CENTER).grid(row=9, column=1, sticky=("w"), padx=10)
+        
+        CTkLabel(self.frame_two, text="Tax", font=('Courier', 18, 'bold'), justify=CENTER).grid(row=10, column=0, sticky=("w"), padx=10)
+        CTkLabel(self.frame_two, text=f"${check.taxes}", font=('Courier', 18, 'bold'),
+                 justify=CENTER).grid(row=10, column=1, sticky=("w"), padx=10)
+        
+        CTkLabel(self.frame_two, text="Net Pay", font=('Courier', 18, 'bold'), justify=CENTER).grid(row=11, column=0, sticky=("w"), padx=10)
+        CTkLabel(self.frame_two, text=f"${check.net_pay}", font=('Courier', 18, 'bold'),
+                 justify=CENTER).grid(row=11, column=1, sticky=("w"), padx=10)
+        
+        CTkButton(self.frame_two, text="PDF", command=lambda: self.gen_pdf()).grid(
+            row=12, column=0, sticky=EW, padx=10, pady=(60, 10), columnspan=2)
+
+    def gen_pdf(self):
+        width = A4
+        height = A4 # size of the file 
+    # path and file name ##
+        path ='/Users/pirinceliyom2/Desktop/school/Final_project_group/CollaborationFinalProject/app/my_pdf.pdf'
+        name = self.name.get()
+        hours_work = int(self.hours_work.get())
+        hourly_rate = int(self.hourly_rate.get())
+        tax_rate = 0.2
+        number = int(self.number.get())
+
+        employee = Employee(name, hours_work, hourly_rate, get_shift(number))
+
+        payroll = Payroll(employee)
+        check = Check(payroll, tax_rate)
+        
+     # collect user enterd data 
+        text=name,hourly_rate,hours_work # replace the line breaks
+        p1 = Paragraph(text, my_Style) # add style 
+        c = canvas.Canvas(path, pagesize=A4) # create canvas
+        p1.wrapOn(c, 300, 50) # width , height of Paragraph 
+        p1.drawOn(c, width-450,height-350) # location of Paragraph 
+        c.save()
+      # Delete from position 0 till end 
+             # Update text widget 
 
 app = App()
 app.mainloop()
