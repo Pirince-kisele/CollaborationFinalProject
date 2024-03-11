@@ -2,26 +2,21 @@ from customtkinter import *
 import customtkinter
 import datetime
 import tkinter as tk
-from tkinter import END
-# get PDF file libraries
-from reportlab.pdfgen import canvas
-from reportlab.lib.styles import ParagraphStyle
-from reportlab.platypus import Paragraph
-from reportlab.lib.pagesizes import A4
-import pathlib
+from tkPDFViewer import tkPDFViewer as pdf
 
-# add Paragraph style ##
-my_Style = ParagraphStyle('My Para style',
-                          fontName="Times-Roman",
-                          fontSize=16,
-                          alignment=0,
-                          borderWidth=2,
-                          borderColor='#FFFF00',
-                          backColor='#F1F1F1',
-                          borderPadding=(20, 20, 20),
-                          leading=20
-                          )
 
+class ToplevelWindow(customtkinter.CTkToplevel):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.geometry("400x300")
+
+        self.label = customtkinter.CTkLabel(self, text="PDF")
+        self.label.pack(padx=20, pady=20)
+        variable1 = pdf.ShowPdf() 
+
+        variable2 = variable1.pdf_view(self,pdf_location=r"location",width=50,height=100) 
+        variable2.pack() 
+      
 
 class Employee:
     def __init__(self, name, hours_worked, rate, shift):
@@ -138,7 +133,7 @@ class App(customtkinter.CTk):
         CTkButton(self.frame_one, text="Quit", command= self.destroy, fg_color="red",font=("Arial", 14, 'bold')).grid(row=8, column=1, sticky=SE, padx=10,pady=(100,5))  
 
 
-        
+        self.toplevel_window = None
 
         # Frame number 2
         self.frame_two = CTkFrame(self, width=150)
@@ -206,34 +201,18 @@ class App(customtkinter.CTk):
         CTkLabel(self.frame_two, text=f"${check.net_pay}", font=('Courier', 18, 'bold'),
                  justify=CENTER).grid(row=11, column=1, sticky=("w"), padx=10)
         
-        CTkButton(self.frame_two, text="PDF", command=lambda: self.gen_pdf()).grid(
+        CTkButton(self.frame_two, text="PDF", command=self.open_toplevel).grid(
             row=12, column=0, sticky=EW, padx=10, pady=(60, 10), columnspan=2)
 
-    def gen_pdf(self):
-        width = A4
-        height = A4 # size of the file 
-    # path and file name ##
-        path ='/Users/pirinceliyom2/Desktop/school/Final_project_group/CollaborationFinalProject/app/my_pdf.pdf'
-        name = self.name.get()
-        hours_work = int(self.hours_work.get())
-        hourly_rate = int(self.hourly_rate.get())
-        tax_rate = 0.2
-        number = int(self.number.get())
 
-        employee = Employee(name, hours_work, hourly_rate, get_shift(number))
-
-        payroll = Payroll(employee)
-        check = Check(payroll, tax_rate)
         
-     # collect user enterd data 
-        text=name,hourly_rate,hours_work # replace the line breaks
-        p1 = Paragraph(text, my_Style) # add style 
-        c = canvas.Canvas(path, pagesize=A4) # create canvas
-        p1.wrapOn(c, 300, 50) # width , height of Paragraph 
-        p1.drawOn(c, width-450,height-350) # location of Paragraph 
-        c.save()
-      # Delete from position 0 till end 
-             # Update text widget 
+            
+    def open_toplevel(self):
+        if self.toplevel_window is None or not self.toplevel_window.winfo_exists():
+            self.toplevel_window = ToplevelWindow(self) 
+             # create window if its None or destroyed
+        else:
+            self.toplevel_window.focus()  # if window exists focus it
 
 app = App()
 app.mainloop()
